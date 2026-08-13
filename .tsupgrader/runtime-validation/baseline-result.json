@@ -1,7 +1,7 @@
 {
-  "planHash": "795db4fb3786005ae5b0b6ff252b97fae0730f4a286bdd23d6d1a45a201b3240",
+  "planHash": "f3c76db7399bb5349e02c9e64db19a3e30efac49f3591fd6b327f5cbbe6660a3",
   "phase": "baseline",
-  "recordedAtUtc": "2026-08-13T22:51:34.5320581Z",
+  "recordedAtUtc": "2026-08-13T23:05:34.9121886Z",
   "retryCount": 0,
   "resetBaseline": true,
   "result": {
@@ -10,7 +10,7 @@
     "setupFailureOutput": null,
     "assertions": [
       {
-        "name": "dependencies-present",
+        "name": "baseline-check",
         "kind": "process",
         "verificationMethod": "exit-code",
         "passed": false,
@@ -18,8 +18,8 @@
         "skipped": false,
         "skippedReason": null,
         "exitCode": null,
-        "outputSample": "\u003Cspawn error: An error occurred trying to start process \u0027node -e \u0022console.log(JSON.stringify(require(\u0027./package.json\u0027).dependencies))\u0022\u0027 with working directory \u0027c:\\Users\\BASTI\\Downloads\\tienda-plantillas_2\\tienda-plantillas\u0027. El sistema no puede encontrar el archivo especificado.\u003E\n",
-        "durationMs": 1
+        "outputSample": "\u003Cspawn error: An error occurred trying to start process \u0027node --version\u0027 with working directory \u0027c:\\Users\\BASTI\\Downloads\\tienda-plantillas_2\\tienda-plantillas\u0027. El sistema no puede encontrar el archivo especificado.\u003E\n",
+        "durationMs": 7
       }
     ]
   }

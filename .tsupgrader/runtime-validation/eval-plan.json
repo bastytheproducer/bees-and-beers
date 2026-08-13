@@ -1,0 +1,12 @@
+{
+  "projectType": "server",
+  "assertions": [
+    {
+      "name": "dependencies-present",
+      "description": "Check dependencies in package.json",
+      "type": "output-contains",
+      "command": "node -e \"console.log(JSON.stringify(require('./package.json').dependencies))\"",
+      "expected": "mercadopago"
+    }
+  ]
+}

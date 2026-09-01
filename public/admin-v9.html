@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Visual Editor v9.0 — Bees and Beers</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .admin-wrap{max-width:1600px;margin:0 auto;padding:48px 24px 100px;}
+  .admin-login{max-width:340px;margin:120px auto;background:var(--paper);color:var(--ink);padding:32px;border-radius:var(--radius);}
+  .admin-login h1{font-size:22px;margin-bottom:6px;}
+  .admin-login p{color:var(--ink-soft);font-size:13px;margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-family:var(--mono);margin-bottom:6px;color:var(--ink-soft);}
+  .field input{width:100%;padding:10px 12px;border:1px solid rgba(43,27,18,0.2);border-radius:var(--radius);font-family:var(--sans);font-size:14px;}
+  .admin-error{color:#A8432F;font-size:13px;margin-top:10px;}
+  .admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;gap:12px;flex-wrap:wrap;}
+  .admin-header h1{font-size:26px;}
+  .admin-header-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .logout-btn,.primary-btn {background:none;border:1px solid var(--line-soft);color:var(--paper);padding:8px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;}
+  .primary-btn{background:var(--copper);border-color:var(--copper);color:var(--bg-deep);font-weight:600;}
+  .kv-warning{background:rgba(201,122,61,0.14);border:1px solid var(--copper);color:var(--paper);padding:14px 16px;border-radius:var(--radius);font-size:13px;margin-bottom:28px;}
+  .panel{background:var(--paper);color:var(--ink);border-radius:var(--radius);padding:24px;margin-bottom:28px;}
+  .panel h2{font-size:17px;margin-bottom:16px;}
+  .editor-wrapper{display:grid;grid-template-columns:200px 1fr 280px;gap:0;height:calc(100vh - 280px);background:var(--paper);border-radius:var(--radius);overflow:hidden;}
+  .editor-left{border-right:1px solid rgba(43,27,18,0.12);overflow-y:auto;padding:12px;}
+  .editor-center{background:rgba(255,255,255,0.02);border-right:1px solid rgba(43,27,18,0.12);overflow-y:auto;padding:20px;}
+  .editor-right{overflow-y:auto;padding:12px;}
+  .block-item{background:rgba(255,255,255,0.08);border:1px solid rgba(43,27,18,0.12);border-radius:8px;padding:10px;margin-bottom:8px;cursor:grab;user-select:none;}
+  .block-item:hover{background:rgba(255,255,255,0.12);}
+  .block-item.active{background:var(--copper);color:#fff;border-color:var(--copper);}
+  .block-item.dragging{opacity:0.5;}
+  .block-item-title{font-weight:600;font-size:12px;}
+  .block-item-type{font-size:10px;color:var(--ink-soft);}
+  .block-item.active .block-item-type{color:rgba(255,255,255,0.7);}
+  .editor-btn{background:var(--copper);color:var(--bg-deep);border:none;padding:8px 12px;border-radius:var(--radius);cursor:pointer;font-weight:600;font-size:12px;width:100%;}
+  .editor-btn:hover{opacity:0.9;}
+  .section-label{font-size:11px;font-family:var(--mono);text-transform:uppercase;color:var(--ink-soft);margin:16px 0 8px;font-weight:600;}
+  .prop-input{width:100%;padding:8px 10px;border:1px solid rgba(43,27,18,0.12);border-radius:var(--radius);font-family:var(--sans);font-size:13px;margin-bottom:8px;}
+  .prop-textarea{width:100%;padding:8px 10px;border:1px solid rgba(43,27,18,0.12);border-radius:var(--radius);font-family:var(--sans);font-size:13px;min-height:60px;resize:vertical;margin-bottom:8px;}
+  .preview-canvas{background:#fff;border-radius:12px;border:1px solid rgba(43,27,18,0.12);padding:20px;min-height:600px;box-shadow:0 8px 24px rgba(0,0,0,0.1);}
+  .canvas-block{margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.04);border:2px dashed rgba(43,27,18,0.08);border-radius:8px;cursor:grab;position:relative;min-height:80px;}
+  .canvas-block:hover{border-color:var(--copper);background:rgba(201,122,61,0.04);}
+  .canvas-block.editing{border-color:var(--copper);border-style:solid;background:rgba(201,122,61,0.08);}
+  .block-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;}
+  .block-action-btn{background:var(--copper);color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;}
+  .color-input{width:100%;height:40px;border:1px solid rgba(43,27,18,0.12);border-radius:var(--radius);cursor:pointer;}
+  .product-panel, .catalog-panel{display:none;}
+  .editor-section{display:none;}
+  .editor-section.active{display:block;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;color:var(--ink-soft);padding:8px 6px;border-bottom:1px solid rgba(43,27,18,0.15);}
+  td{padding:10px 6px;border-bottom:1px solid rgba(43,27,18,0.08);vertical-align:top;}
+</style>
+</head>
+<body>
+
+<div id="login-view" class="admin-login">
+  <h1>Panel admin v9.0</h1>
+  <p>Bees and Beers — Visual Editor</p>
+  <div class="field">
+    <label>Usuario</label>
+    <input type="text" id="login-user" autocomplete="username">
+  </div>
+  <div class="field">
+    <label>Contraseña</label>
+    <input type="password" id="login-pass" autocomplete="current-password">
+  </div>
+  <button class="btn btn-primary btn-full" id="login-btn">Entrar</button>
+  <p class="admin-error" id="login-error"></p>
+</div>
+
+<div id="admin-view" class="admin-wrap" style="display:none;">
+  <div class="admin-header">
+    <h1>Editor Visual v9.0</h1>
+    <div class="admin-header-actions">
+      <button type="button" class="primary-btn" id="save-editor-btn">Guardar cambios</button>
+      <button type="button" class="primary-btn" id="preview-full-btn" style="background:transparent; border-color:var(--paper);">Previsualizar sitio</button>
+      <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="editor-wrapper">
+    <!-- Panel izquierdo: Bloques -->
+    <div class="editor-left">
+      <h3 style="font-size:13px; margin:0 0 12px; font-weight:600;">Bloques</h3>
+      <div id="blocks-list"></div>
+      <button type="button" class="editor-btn" id="add-block-btn">+ Agregar bloque</button>
+
+      <div class="section-label">Temas rápidos</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <button type="button" class="mini-btn preset-btn" data-preset="gold" style="font-size:10px;">Dorado</button>
+        <button type="button" class="mini-btn preset-btn" data-preset="dark" style="font-size:10px;">Oscuro</button>
+        <button type="button" class="mini-btn preset-btn" data-preset="earth" style="font-size:10px;">Tierra</button>
+        <button type="button" class="mini-btn preset-btn" data-preset="minimal" style="font-size:10px;">Limpio</button>
+      </div>
+
+      <div class="section-label">Marca</div>
+      <div class="field" style="margin-bottom:6px;">
+        <label style="font-size:11px;">Nombre</label>
+        <input type="text" id="site-brand" class="prop-input" style="margin-bottom:0;">
+      </div>
+      <div class="field" style="margin-bottom:6px;">
+        <label style="font-size:11px;">Email</label>
+        <input type="text" id="site-email" class="prop-input" style="margin-bottom:0;">
+      </div>
+    </div>
+
+    <!-- Panel central: Editor visual -->
+    <div class="editor-center">
+      <div class="preview-canvas" id="canvas-blocks"></div>
+    </div>
+
+    <!-- Panel derecho: Propiedades -->
+    <div class="editor-right">
+      <h3 style="font-size:13px; margin:0 0 12px; font-weight:600;" id="props-title">Selecciona un bloque</h3>
+      <div id="properties-panel"></div>
+    </div>
+  </div>
+
+  <!-- Panels secundarios -->
+  <div class="panel catalog-panel">
+    <h2>Productos</h2>
+    <table>
+      <thead><tr><th>Nombre</th><th>Estilo</th><th>Volumen</th><th>Precio</th><th>Disponible</th></tr></thead>
+      <tbody id="product-table"></tbody>
+    </table>
+  </div>
+
+  <div class="panel" style="margin-top:32px;">
+    <h2>Pedidos recientes</h2>
+    <table>
+      <thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Estado</th></tr></thead>
+      <tbody id="orders-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="admin-v9.js"></script>
+</body>
+</html>

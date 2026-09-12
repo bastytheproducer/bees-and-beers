@@ -2,6 +2,31 @@ const money = (n) => "$" + Number(n).toLocaleString("es-CL");
 const loginView = document.getElementById("login-view");
 const adminView = document.getElementById("admin-view");
 const pageEditorPanel = document.getElementById("page-editor-panel");
+const presetMap = {
+  gold: { primary: "#C97A3D", secondary: "#E39655", bg: "#241713", bgDeep: "#1A0F0C", paper: "#F4ECDD", ink: "#2B1B12" },
+  dark: { primary: "#D19A5A", secondary: "#A96334", bg: "#111827", bgDeep: "#0B1220", paper: "#F3F4F6", ink: "#111827" },
+  earth: { primary: "#B55D3B", secondary: "#E09B63", bg: "#2C1E1A", bgDeep: "#1B120E", paper: "#F9EBDD", ink: "#2B1B12" },
+  minimal: { primary: "#4F46E5", secondary: "#818CF8", bg: "#F5F7FB", bgDeep: "#E2E8F0", paper: "#FFFFFF", ink: "#111827" },
+};
+
+function applyPreset(name) {
+  const preset = presetMap[name] || presetMap.gold;
+  const ids = {
+    primary: "site-theme-primary",
+    secondary: "site-theme-secondary",
+    bg: "site-theme-bg",
+    bgDeep: "site-theme-bg-deep",
+    paper: "site-theme-paper",
+    ink: "site-theme-ink",
+  };
+
+  Object.entries(ids).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = preset[key] || "#000000";
+  });
+
+  renderEditorPreview();
+}
 
 function toggleEditor(forceOpen) {
   const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !pageEditorPanel.classList.contains("active");
@@ -25,7 +50,11 @@ async function loadSiteContentEditor() {
   document.getElementById("site-hero-modes").value = content.hero?.modes || "";
   document.getElementById("site-hero-badge").value = content.hero?.badge || "";
   document.getElementById("site-theme-primary").value = content.theme?.primary || "#C97A3D";
+  document.getElementById("site-theme-secondary").value = content.theme?.secondary || content.theme?.primary || "#E39655";
   document.getElementById("site-theme-bg").value = content.theme?.bg || "#241713";
+  document.getElementById("site-theme-bg-deep").value = content.theme?.bgDeep || content.theme?.bg || "#1A0F0C";
+  document.getElementById("site-theme-paper").value = content.theme?.paper || "#F4ECDD";
+  document.getElementById("site-theme-ink").value = content.theme?.ink || "#2B1B12";
   document.getElementById("site-hero-primary").value = content.hero?.primaryCta || "";
   document.getElementById("site-hero-secondary").value = content.hero?.secondaryCta || "";
 
@@ -69,7 +98,11 @@ function buildPreviewPayload() {
   const heroSecondary = document.getElementById("site-hero-secondary").value.trim() || "Cómo funciona";
   const heroEyebrow = document.getElementById("site-hero-eyebrow").value.trim() || "Elaboración artesanal";
   const themePrimary = document.getElementById("site-theme-primary").value || "#C97A3D";
+  const themeSecondary = document.getElementById("site-theme-secondary").value || themePrimary;
   const themeBg = document.getElementById("site-theme-bg").value || "#241713";
+  const themeBgDeep = document.getElementById("site-theme-bg-deep").value || themeBg;
+  const themePaper = document.getElementById("site-theme-paper").value || "#F4ECDD";
+  const themeInk = document.getElementById("site-theme-ink").value || "#2B1B12";
 
   const processItems = Array.from(document.querySelectorAll('[data-role="process-title"]')).map((input, index) => ({
     title: input.value.trim() || `Paso ${index + 1}`,
@@ -87,11 +120,11 @@ function buildPreviewPayload() {
     footerText: `${brand} — bebidas artesanales`,
     theme: {
       primary: themePrimary,
-      secondary: themePrimary,
+      secondary: themeSecondary,
       bg: themeBg,
-      bgDeep: themeBg,
-      paper: "#F4ECDD",
-      ink: "#2B1B12",
+      bgDeep: themeBgDeep,
+      paper: themePaper,
+      ink: themeInk,
     },
     hero: {
       eyebrow: heroEyebrow,
@@ -117,6 +150,12 @@ function renderEditorPreview() {
   const safeHero = payload.hero;
   const safeFaq = payload.faq || [];
   const safeProcess = payload.process?.steps || [];
+  const theme = payload.theme || {};
+
+  const deviceMode = document.body.dataset.previewDevice || "desktop";
+  const widthMap = { desktop: "100%", tablet: "768px", mobile: "420px" };
+  previewFrame.style.width = widthMap[deviceMode] || "100%";
+  previewFrame.style.margin = "0 auto";
 
   previewDoc.open();
   previewDoc.write(`<!DOCTYPE html>
@@ -126,27 +165,42 @@ function renderEditorPreview() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-          :root { --bg:#241713; --bg-deep:#1A0F0C; --paper:#F4ECDD; --ink:#2B1B12; --ink-soft:#5A4433; --copper:#C97A3D; --line-soft:rgba(255,255,255,0.12); --serif:"Fraunces", Georgia, serif; --sans:"IBM Plex Sans", sans-serif; }
+          :root {
+            --bg: ${theme.bg || "#241713"};
+            --bg-deep: ${theme.bgDeep || theme.bg || "#1A0F0C"};
+            --paper: ${theme.paper || "#F4ECDD"};
+            --ink: ${theme.ink || "#2B1B12"};
+            --ink-soft: rgba(43,27,18,0.72);
+            --copper: ${theme.primary || "#C97A3D"};
+            --copper-bright: ${theme.secondary || theme.primary || "#E39655"};
+            --line-soft: rgba(255,255,255,0.12);
+            --serif:"Fraunces", Georgia, serif; --sans:"IBM Plex Sans", sans-serif;
+          }
           * { box-sizing:border-box; }
-          body { margin:0; background:#f7efe4; color:var(--ink); font-family:var(--sans); }
-          .layout { padding:20px; }
-          .hero { background:linear-gradient(135deg,#3b2a23,#1d110d); color:#fff; border-radius:16px; padding:32px 24px; }
-          .eyebrow { font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#f0b583; margin-bottom:10px; }
+          body { margin:0; background:linear-gradient(180deg, var(--paper), #f8f4ee); color:var(--ink); font-family:var(--sans); }
+          .layout { padding:20px; min-height:100vh; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)); }
+          .brand { font-family:var(--serif); font-size:18px; font-weight:700; margin-bottom:14px; color:var(--ink); }
+          .hero { background:linear-gradient(135deg, var(--bg), var(--bg-deep)); color:#fff; border-radius:16px; padding:32px 24px; box-shadow:0 18px 38px rgba(0,0,0,0.15); }
+          .eyebrow { font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--copper-bright); margin-bottom:10px; }
           h1 { margin:0 0 12px; font-size:32px; line-height:1.1; font-family:var(--serif); }
           .tagline { font-size:16px; opacity:0.9; margin-bottom:16px; }
           .modes { font-size:13px; margin-bottom:18px; }
           .badge { display:inline-block; border:1px solid rgba(255,255,255,0.2); padding:8px 12px; border-radius:999px; font-size:12px; }
-          .cta { display:flex; gap:12px; margin-top:16px; }
+          .cta { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
           .btn { display:inline-flex; align-items:center; justify-content:center; border-radius:8px; padding:10px 16px; font-weight:700; }
-          .btn.primary { background:#C97A3D; color:#1A0F0C; }
-          .btn.secondary { border:1px solid rgba(255,255,255,0.25); color:#fff; }
-          .section { margin-top:22px; background:#fff; border-radius:12px; padding:18px 16px; }
+          .btn.primary { background:var(--copper); color:var(--bg-deep); }
+          .btn.secondary { border:1px solid rgba(255,255,255,0.25); color:#fff; background:transparent; }
+          .section { margin-top:22px; background:rgba(255,255,255,0.65); border-radius:12px; padding:18px 16px; border:1px solid rgba(43,27,18,0.08); }
           .section h3 { margin:0 0 12px; font-family:var(--serif); font-size:22px; color:var(--ink); }
           .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-          .step, .faq-item { background:#f7efe4; border:1px solid rgba(43,27,18,0.08); border-radius:10px; padding:12px; }
+          .step, .faq-item { background:rgba(255,255,255,0.7); border:1px solid rgba(43,27,18,0.08); border-radius:10px; padding:12px; }
           .step strong, .faq-item strong { display:block; margin-bottom:6px; }
           .faq-item + .faq-item { margin-top:12px; }
-          .brand { font-family:var(--serif); font-size:18px; font-weight:700; margin-bottom:14px; }
+          @media (max-width: 640px) {
+            .grid { grid-template-columns:1fr; }
+            .hero { padding:22px 18px; }
+            h1 { font-size:24px; }
+          }
         </style>
       </head>
       <body>
@@ -225,11 +279,11 @@ async function saveSiteContent() {
     email: document.getElementById("site-email").value.trim(),
     theme: {
       primary: document.getElementById("site-theme-primary").value || "#C97A3D",
-      secondary: document.getElementById("site-theme-primary").value || "#C97A3D",
+      secondary: document.getElementById("site-theme-secondary").value || document.getElementById("site-theme-primary").value || "#E39655",
       bg: document.getElementById("site-theme-bg").value || "#241713",
-      bgDeep: document.getElementById("site-theme-bg").value || "#241713",
-      paper: "#F4ECDD",
-      ink: "#2B1B12",
+      bgDeep: document.getElementById("site-theme-bg-deep").value || document.getElementById("site-theme-bg").value || "#1A0F0C",
+      paper: document.getElementById("site-theme-paper").value || "#F4ECDD",
+      ink: document.getElementById("site-theme-ink").value || "#2B1B12",
     },
     hero: {
       eyebrow: document.getElementById("site-hero-eyebrow").value.trim(),
@@ -271,6 +325,18 @@ async function saveSiteContent() {
 document.getElementById("add-process-step").addEventListener("click", addProcessStep);
 document.getElementById("add-faq-item").addEventListener("click", addFaqItem);
 document.getElementById("refresh-preview-btn").addEventListener("click", renderEditorPreview);
+
+document.querySelectorAll(".preset-btn").forEach((button) => {
+  button.addEventListener("click", () => applyPreset(button.dataset.preset));
+});
+
+document.querySelectorAll(".device-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".device-btn").forEach((item) => item.classList.toggle("active", item === button));
+    document.body.dataset.previewDevice = button.dataset.device || "desktop";
+    renderEditorPreview();
+  });
+});
 
 document.getElementById("site-editor-form").addEventListener("submit", async (event) => {
   event.preventDefault();

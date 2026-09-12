@@ -93,7 +93,14 @@
     <div class="editor-shell">
       <div class="editor-column left">
         <h2>Editor visual de la página</h2>
-        <p style="margin-bottom:18px; color:var(--ink-soft);">Edita el contenido principal y observa cómo cambia la landing al instante.</p>
+        <p style="margin-bottom:18px; color:var(--ink-soft);">Versión 8.0 — edición visual en tiempo real, colores de marca y vista previa por dispositivo.</p>
+
+        <div class="editor-actions" style="margin-top:0; margin-bottom:18px;">
+          <button type="button" class="mini-btn preset-btn" data-preset="gold">Estilo dorado</button>
+          <button type="button" class="mini-btn preset-btn" data-preset="dark">Modo oscuro</button>
+          <button type="button" class="mini-btn preset-btn" data-preset="earth">Terracota</button>
+          <button type="button" class="mini-btn preset-btn" data-preset="minimal">Minimal</button>
+        </div>
 
         <form id="site-editor-form">
           <div class="editor-grid">
@@ -130,8 +137,24 @@
               <input type="color" id="site-theme-primary" />
             </div>
             <div class="field">
+              <label>Color secundario</label>
+              <input type="color" id="site-theme-secondary" />
+            </div>
+            <div class="field">
               <label>Color de fondo</label>
               <input type="color" id="site-theme-bg" />
+            </div>
+            <div class="field">
+              <label>Fondo profundo</label>
+              <input type="color" id="site-theme-bg-deep" />
+            </div>
+            <div class="field">
+              <label>Fondo de panel</label>
+              <input type="color" id="site-theme-paper" />
+            </div>
+            <div class="field">
+              <label>Color de texto</label>
+              <input type="color" id="site-theme-ink" />
             </div>
             <div class="field">
               <label>Botón principal</label>
@@ -169,7 +192,12 @@
       <div class="editor-column right">
         <div class="preview-header">
           <span>Vista previa en vivo</span>
-          <button type="button" class="mini-btn" id="refresh-preview-btn">Actualizar</button>
+          <div class="editor-actions" style="margin:0;">
+            <button type="button" class="mini-btn device-btn active" data-device="desktop">Desktop</button>
+            <button type="button" class="mini-btn device-btn" data-device="tablet">Tablet</button>
+            <button type="button" class="mini-btn device-btn" data-device="mobile">Mobile</button>
+            <button type="button" class="mini-btn" id="refresh-preview-btn">Actualizar</button>
+          </div>
         </div>
         <iframe id="editor-preview-frame" class="preview-frame" src="/" title="Vista previa de la tienda"></iframe>
       </div>

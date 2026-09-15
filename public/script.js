@@ -313,6 +313,7 @@ overlay.addEventListener("click", closeCart);
 // ---- Autocompletado de comunas de Chile ----
 const comunaInput = document.getElementById("ck-comuna");
 const comunaSuggestions = document.getElementById("comuna-suggestions");
+const addressInput = document.getElementById("ck-address");
 let activeSuggestionIndex = -1;
 
 function normalizeStr(s) {
@@ -440,10 +441,12 @@ document.addEventListener("click", (e) => {
 let deliveryMap, deliveryMarker;
 let deliveryLat = null;
 let deliveryLng = null;
+let geocodeTimer;
+let geocodeRequestId = 0;
 
 function initDeliveryMap() {
   if (deliveryMap) return; // ya inicializado
-  const defaultCenter = [-33.4489, -70.6693]; // Santiago, se ajusta si hay geolocalización
+  const defaultCenter = [ORIGEN_LAT, ORIGEN_LNG]; // Puerto Montt, origen del despacho
   deliveryMap = L.map("delivery-map", { scrollWheelZoom: false }).setView(defaultCenter, 12);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap",
@@ -471,7 +474,7 @@ function initDeliveryMap() {
   }
 }
 
-function placeMarker(lat, lng) {
+function placeMarker(lat, lng, { reverse = true } = {}) {
   deliveryLat = lat;
   deliveryLng = lng;
   if (deliveryMarker) {
@@ -489,7 +492,65 @@ function placeMarker(lat, lng) {
   }
   renderShippingSummary();
   renderCart();
-  reverseGeocode(lat, lng);
+  if (reverse) reverseGeocode(lat, lng);
+}
+
+async function geocodeAddress() {
+  const address = addressInput.value.trim();
+  const comuna = comunaInput.value.trim();
+  const hint = document.getElementById("map-hint");
+  if (address.length < 5) return;
+
+  const requestId = ++geocodeRequestId;
+  hint.textContent = "Buscando esa dirección en el mapa...";
+  initDeliveryMap();
+
+  const query = [address, comuna, "Chile"].filter(Boolean).join(", ");
+  const params = new URLSearchParams({
+    q: query,
+    format: "jsonv2",
+    addressdetails: "1",
+    limit: "5",
+    countrycodes: "cl",
+    "accept-language": "es",
+  });
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`Geocodificación falló (${res.status})`);
+    const results = await res.json();
+    if (requestId !== geocodeRequestId) return;
+
+    const result = results[0];
+    if (!result) {
+      hint.textContent = "No encontramos esa dirección. Agrega la comuna o marca el punto en el mapa.";
+      return;
+    }
+
+    const lat = Number(result.lat);
+    const lng = Number(result.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error("Coordenadas inválidas");
+
+    deliveryMap.setView([lat, lng], 17, { animate: true });
+    placeMarker(lat, lng, { reverse: false });
+
+    const resultAddress = result.address || {};
+    const detectedComuna =
+      resultAddress.city_district ||
+      resultAddress.suburb ||
+      resultAddress.municipality ||
+      resultAddress.city ||
+      resultAddress.town ||
+      "";
+    if (!comuna && detectedComuna) comunaInput.value = detectedComuna;
+    hint.textContent = "Dirección localizada. Puedes ajustar el punto arrastrando el marcador.";
+  } catch (error) {
+    if (requestId !== geocodeRequestId) return;
+    console.warn("No se pudo localizar la dirección", error);
+    hint.textContent = "No se pudo localizar la dirección. Revisa los datos o marca el punto en el mapa.";
+  }
 }
 
 async function reverseGeocode(lat, lng) {
@@ -511,6 +572,34 @@ async function reverseGeocode(lat, lng) {
     hint.textContent = "No se pudo detectar la dirección automáticamente, escríbela abajo.";
   }
 }
+
+function scheduleAddressGeocode() {
+  clearTimeout(geocodeTimer);
+  geocodeRequestId += 1;
+  deliveryLat = null;
+  deliveryLng = null;
+  if (deliveryMarker) {
+    deliveryMarker.remove();
+    deliveryMarker = null;
+  }
+  renderShippingSummary();
+  renderCart();
+  if (addressInput.value.trim().length < 5) return;
+  geocodeTimer = setTimeout(geocodeAddress, 800);
+}
+
+addressInput.addEventListener("input", scheduleAddressGeocode);
+addressInput.addEventListener("blur", () => {
+  clearTimeout(geocodeTimer);
+  geocodeAddress();
+});
+addressInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    clearTimeout(geocodeTimer);
+    geocodeAddress();
+  }
+});
 
 // El mapa necesita el contenedor visible para dibujarse bien, así que se
 // inicializa cuando se abre el carrito, no al cargar la página.

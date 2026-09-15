@@ -438,11 +438,14 @@ document.addEventListener("click", (e) => {
 });
 
 // ---- Mapa de despacho (Leaflet + OpenStreetMap, sin costo ni API key) ----
-let deliveryMap, deliveryMarker;
+let deliveryMap, deliveryMarker, locationAccuracyCircle;
 let deliveryLat = null;
 let deliveryLng = null;
 let geocodeTimer;
 let geocodeRequestId = 0;
+let locationRequestInProgress = false;
+
+const locationButton = document.getElementById("use-location");
 
 function initDeliveryMap() {
   if (deliveryMap) return; // ya inicializado
@@ -463,15 +466,7 @@ function initDeliveryMap() {
   });
   deliveryMap.on("click", (e) => placeMarker(e.latlng.lat, e.latlng.lng));
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        deliveryMap.setView([pos.coords.latitude, pos.coords.longitude], 15);
-      },
-      () => {}, // si el usuario no da permiso, se queda en Santiago
-      { timeout: 4000 }
-    );
-  }
+  locateUser();
 }
 
 function placeMarker(lat, lng, { reverse = true } = {}) {
@@ -494,6 +489,67 @@ function placeMarker(lat, lng, { reverse = true } = {}) {
   renderCart();
   if (reverse) reverseGeocode(lat, lng);
 }
+
+function locateUser() {
+  const hint = document.getElementById("map-hint");
+  if (!navigator.geolocation) {
+    hint.textContent = "Este navegador no permite obtener tu ubicación. Marca el punto en el mapa.";
+    return;
+  }
+  if (locationRequestInProgress) return;
+
+  locationRequestInProgress = true;
+  if (locationButton) {
+    locationButton.disabled = true;
+    locationButton.textContent = "Localizando con alta precisión...";
+  }
+  hint.textContent = "Obteniendo tu ubicación exacta...";
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      deliveryMap.setView([latitude, longitude], 18, { animate: true });
+      placeMarker(latitude, longitude);
+      if (locationAccuracyCircle) locationAccuracyCircle.remove();
+      locationAccuracyCircle = L.circle([latitude, longitude], {
+        radius: Math.max(accuracy, 8),
+        color: "#C97A3D",
+        fillColor: "#C97A3D",
+        fillOpacity: 0.16,
+        weight: 2,
+      }).addTo(deliveryMap);
+      hint.textContent = `Ubicación detectada con una precisión aproximada de ${Math.round(accuracy)} m. Puedes ajustar el marcador.`;
+      locationRequestInProgress = false;
+      if (locationButton) {
+        locationButton.disabled = false;
+        locationButton.textContent = "Volver a usar mi ubicación";
+      }
+    },
+    (error) => {
+      const message = {
+        1: "Permiso de ubicación denegado. Actívalo en la configuración del navegador.",
+        2: "No se pudo determinar tu ubicación. Comprueba el GPS o la señal.",
+        3: "La ubicación tardó demasiado. Inténtalo nuevamente.",
+      }[error.code] || "No se pudo obtener tu ubicación.";
+      hint.textContent = `${message} También puedes marcar el punto manualmente.`;
+      locationRequestInProgress = false;
+      if (locationButton) {
+        locationButton.disabled = false;
+        locationButton.textContent = "Intentar ubicación nuevamente";
+      }
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000,
+    }
+  );
+}
+
+locationButton?.addEventListener("click", () => {
+  initDeliveryMap();
+  locateUser();
+});
 
 async function geocodeAddress() {
   const address = addressInput.value.trim();

@@ -112,3 +112,11 @@ Desde el panel admin (`/admin`), con Upstash conectado, o editando
 
 Ver `.env.example` — se cargan todas en Vercel → Settings → Environment
 Variables, igual que en la versión anterior del sitio.
+
+
+## Historial de actualizaciones
+
+Este bloque lo mantiene la automatización de mejora continua: cada ciclo
+agrega una línea con la versión y la fecha/hora del cambio (hora de Chile).
+
+- **v1.0.1** — 2026-09-15 02:41 — Repositorio renombrado a `bees-and-beers` (antes `tienda-plantillas`) para identificarlo mejor.

@@ -1,8 +1,8 @@
 {
-  "name": "libro-mayor-tienda",
-  "version": "1.0.0",
+  "name": "bees-and-beers",
+  "version": "1.0.1",
   "private": true,
-  "description": "Tienda automatizada de plantillas digitales de finanzas y productividad.",
+  "description": "Tienda de cerveza artesanal e hidromiel Bees and Beers.",
   "scripts": {
     "dev": "vercel dev"
   },

@@ -1,4 +1,4 @@
-const { requireAdmin } = require("../../lib/session");
+const { requireAdmin } = require("../lib/session");
 const { readSiteContent, saveSiteContent } = require("../../lib/site-content");
 
 module.exports = async (req, res) => {
